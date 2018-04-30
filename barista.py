@@ -32,7 +32,7 @@ def main():
                                                None, one_hot=False, rep=words)
         vocab = en.vocab.update(cross_dataset.vocab)
         
-        vecs = WordVecs('/home/jeremy/NS/Keep/Temp/Exps/BWEs_for_CLSA/embeddings/barista/sg-300-window4-negative20_en_{0}.txt'.format(lang),
+        vecs = WordVecs('embeddings/barista/sg-300-window4-negative20_en_{0}.txt'.format(lang),
                         vocab=vocab)
         
         en = General_Dataset(os.path.join('datasets', 'en', args.dataset),
@@ -53,7 +53,7 @@ def main():
             clf = LinearSVC(C=best_c)
             clf.fit(en_binary._Xtrain, en_binary._ytrain)
             acc, f1 = scores(clf, binary_cross_dataset, 'binary')
-            print_prediction(clf, binary_cross_dataset, os.path.join('predictions', lang, 'barista-svm', '{0}-bi.txt'.format(args.dataset)))
+            print_prediction(clf, binary_cross_dataset, os.path.join('predictions', lang, 'barista', '{0}-bi.txt'.format(args.dataset)))
             print('acc: {0:.3f}'.format(acc))
             print('f1:  {0:.3f}'.format(f1))
 
@@ -63,7 +63,7 @@ def main():
             clf = LinearSVC(C=best_c)
             clf.fit(en._Xtrain, en._ytrain)
             acc, f1 = scores(clf, cross_dataset)
-            print_prediction(clf, cross_dataset, os.path.join('predictions', lang, 'barista-svm', '{0}-4cls.txt'.format(args.dataset)))
+            print_prediction(clf, cross_dataset, os.path.join('predictions', lang, 'barista', '{0}-4cls.txt'.format(args.dataset)))
 
             print('acc: {0:.3f}'.format(acc))
             print('f1:  {0:.3f}'.format(f1))

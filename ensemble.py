@@ -29,8 +29,7 @@ def main():
     parser = argparse.ArgumentParser(description='Ensemble approach')
     parser.add_argument('-l', '--lang', default='es', help='language: es, eu, ca')
     parser.add_argument('-d', '--dataset', default='opener_sents', help='dataset to test')
-    #parser.add_argument('-m', '--models', default=['mt-svm', 'blse', 'barista-svm', 'artetxe-svm'], nargs='+', type=str)
-    parser.add_argument('-m', '--models', default=['mt-svm', 'blse'], nargs='+', type=str)
+    parser.add_argument('-m', '--models', default=['mt', 'blse', 'barista', 'artetxe'], nargs='+', type=str)
     parser.add_argument('-bi', default=True, type=str2bool)
     args = parser.parse_args()
 
@@ -52,11 +51,11 @@ def main():
 
     # Load Word Embeddings
     print('Loading embeddings and datasets...')
-    src_vecs = WordVecs('/home/jeremy/NS/Keep/Temp/Exps/EMBEDDINGS/BLSE/google.txt')
-    trg_vecs = WordVecs('/home/jeremy/NS/Keep/Temp/Exps/EMBEDDINGS/BLSE/sg-300-{0}.txt'.format(args.lang))
+    src_vecs = WordVecs('embeddings/BLSE/google.txt')
+    trg_vecs = WordVecs('embeddings/BLSE/sg-300-{0}.txt'.format(args.lang))
 
-    if 'barista-svm' in args.models:
-        barista_vecs = WordVecs('/home/jeremy/NS/Keep/Temp/Exps/BWEs_for_CLSA/embeddings/barista/sg-300-window4-negative20_en_{0}.txt'. format(args.lang),
+    if 'barista' in args.models:
+        barista_vecs = WordVecs('embeddings/barista/sg-300-window4-negative20_en_{0}.txt'. format(args.lang),
                                 vocab=list(blse_dataset.vocab)+list(blse_crossdataset.vocab))
 
     mt_dataset = General_Dataset(os.path.join('datasets','en', args.dataset), src_vecs,
@@ -67,7 +66,7 @@ def main():
                               binary=args.bi, one_hot=False,
                               lowercase=False, rep=ave_vecs)
 
-    if 'barista-svm' in args.models:
+    if 'barista' in args.models:
         ba_dataset = General_Dataset(os.path.join('datasets', 'en', args.dataset), barista_vecs,
                               binary=args.bi, one_hot=False,
                               lowercase=False, rep=ave_vecs)
@@ -111,28 +110,28 @@ def main():
         classifiers['blse']['crossdataset'] = blse_crossdataset
     
     # MT
-    if 'mt-svm' in args.models:
-        print('    MT-SVM...')
+    if 'mt' in args.models:
+        print('    MT...')
         best_c, best_f1 = get_best_C(mt_dataset, mt_crossdataset)
         mt_clf = LinearSVC(C=best_c)
         mt_clf.fit(mt_dataset._Xtrain, mt_dataset._ytrain)
-        classifiers['mt-svm'] = {}
-        classifiers['mt-svm']['model'] = mt_clf
-        classifiers['mt-svm']['crossdataset'] = mt_crossdataset
+        classifiers['mt'] = {}
+        classifiers['mt']['model'] = mt_clf
+        classifiers['mt']['crossdataset'] = mt_crossdataset
 
     # Barista
-    if 'barista-svm' in args.models:
-        print('    BARISTA-SVM...')
+    if 'barista' in args.models:
+        print('    BARISTA...')
         best_c, best_f1 = get_best_C(ba_dataset, ba_crossdataset)
         ba_clf = LinearSVC(C=best_c)
         ba_clf.fit(ba_dataset._Xtrain, ba_dataset._ytrain)
-        classifiers['barista-svm'] = {}
-        classifiers['barista-svm']['model'] = ba_clf
-        classifiers['barista-svm']['crossdataset'] = ba_crossdataset
+        classifiers['barista'] = {}
+        classifiers['barista']['model'] = ba_clf
+        classifiers['barista']['crossdataset'] = ba_crossdataset
 
     # Artetxe
-    if 'artetxe-svm' in args.models:
-        print('    ARTETXE-SVM...')
+    if 'artetxe' in args.models:
+        print('    ARTETXE...')
         pdataset = ProjectionDataset('lexicons/bingliu_en_{0}.one-2-one.txt'.format(args.lang),
                                  src_vecs, trg_vecs)
 
@@ -154,9 +153,9 @@ def main():
         best_c, best_f1 = get_best_C(artetxe_dataset, artetxe_crossdataset)
         artetxe_clf = LinearSVC(C=best_c)
         artetxe_clf.fit(artetxe_dataset._Xtrain, artetxe_dataset._ytrain)
-        classifiers['artetxe-svm'] = {}
-        classifiers['artetxe-svm']['model'] = artetxe_clf
-        classifiers['artetxe-svm']['crossdataset'] = artetxe_crossdataset
+        classifiers['artetxe'] = {}
+        classifiers['artetxe']['model'] = artetxe_clf
+        classifiers['artetxe']['crossdataset'] = artetxe_crossdataset
 
 
     # Predict training and dev for all models
