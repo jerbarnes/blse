@@ -1,19 +1,6 @@
 import numpy as np
 
 
-def sum_vecs(sentence, model):
-    """Returns the sum of the vectors of the tokens
-    in the sentence if they are in the model"""
-    sent = np.array(np.zeros((model.vector_size)))
-    for w in sentence.split():
-        try:
-            sent += model[w]
-        except:
-            # TODO: implement a much better backoff strategy (Edit distance)
-            pass
-    return sent
-
-
 def ave_vecs(sentence, model):
     sent = np.array(np.zeros((model.vector_size)))
     sent_length = len(sentence.split())
@@ -22,7 +9,7 @@ def ave_vecs(sentence, model):
             sent += model[w]
         except:
             # TODO: implement a much better backoff strategy (Edit distance)
-            sent += model['the']
+            sent += np.random.uniform((-.25, .25, model.vector_size))
     return sent / sent_length
 
 
@@ -39,14 +26,14 @@ def idx_vecs(sentence, model):
     return sent
 
 
-def bow(sentence, model):
+def bow(sentence, w2idx):
     """
     Bag of words representation
     """
-    array = np.zeros(len(model))
+    array = np.zeros(len(w2idx))
     for w in sentence:
         try:
-            array[model[w]] += 1
+            array[w2idx[w]] += 1
         except KeyError:
             pass
     return array

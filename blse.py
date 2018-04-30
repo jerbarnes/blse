@@ -9,21 +9,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Utils.Datasets import *
 from Utils.WordVecs import *
-from Utils.MyMetrics import *
+from Utils.utils import *
 from sklearn.metrics import log_loss, f1_score, accuracy_score, precision_score, recall_score, confusion_matrix
 from scipy.spatial.distance import cosine
-
-
-def mse_loss(x,y):
-    # mean squared error loss
-    return torch.sum((x - y )**2) / x.data.nelement()
-
-def cos(x, y):
-    """
-    This returns the mean cosine similarity between two sets of vectors.
-    """
-    c = nn.CosineSimilarity()
-    return c(x, y).mean()
 
 
 class BLSE(nn.Module):
@@ -291,46 +279,21 @@ class BLSE(nn.Module):
             print('acc:  {0:.3f}\nmacro prec: {1:.3f}\nmacro rec: {2:.3f}\nmacro f1: {3:.3f}'.format(acc, prec, rec, f1))
 
 
-def get_syn_ant(lang, vecs):
-    # This is a quick way to import the sentiment synonyms and antonyms to check their behaviour during training.
-    synonyms1 = [l.strip() for l in open(os.path.join('syn-ant', lang, 'syn1.txt')) if l.strip() in vecs._w2idx]
-    synonyms2 = [l.strip() for l in open(os.path.join('syn-ant', lang, 'syn2.txt')) if l.strip() in vecs._w2idx]
-    neg = [l.strip() for l in open(os.path.join('syn-ant', lang, 'neg.txt')) if l.strip() in vecs._w2idx]
-    idx = min(len(synonyms1), len(synonyms2), len(neg))
-    return synonyms1[:idx], synonyms2[:idx], neg[:idx]
+def mse_loss(x,y):
+    # mean squared error loss
+    return torch.sum((x - y )**2) / x.data.nelement()
 
-def get_best_run(weightdir):
+def cos(x, y):
     """
-    This returns the best dev f1, parameters, and weights from the models
-    found in the weightdir.
+    This returns the mean cosine similarity between two sets of vectors.
     """
-    best_params = []
-    best_f1 = 0.0
-    best_weights = ''
-    for file in os.listdir(weightdir):
-        epochs = int(re.findall('[0-9]+', file.split('-')[-4])[0])
-        batch_size = int(re.findall('[0-9]+', file.split('-')[-3])[0])
-        alpha = float(re.findall('0.[0-9]+', file.split('-')[-2])[0])
-        f1 = float(re.findall('0.[0-9]+', file.split('-')[-1])[0])
-        if f1 > best_f1:
-            best_params = [epochs, batch_size, alpha]
-            best_f1 = f1
-            weights = os.path.join(weightdir, file)
-            best_weights = weights
-    return best_f1, best_params, best_weights
+    c = nn.CosineSimilarity()
+    return c(x, y).mean()
 
-def str2bool(v):
-    # Converts a string to a boolean, for parsing command line arguments
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
-
-if __name__ == '__main__':  
+def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', help="target language: es, ca, eu (default: es)", default='es')
+    parser.add_argument('-tl', help="source language: es, ca, eu, en (default: en)", default='en')
+    parser.add_argument('-tl', help="target language: es, ca, eu, en (default: es)", default='es')
     parser.add_argument('-bi', help="binary or 4-class (default: True)", default=True, type=str2bool)
     parser.add_argument('-epochs', default=80, type=int, help="training epochs (default: 80)")
     parser.add_argument('-alpha', default=.5, type=float, help="trade-off between projection and classification objectives (default: .5)")
@@ -346,10 +309,10 @@ if __name__ == '__main__':
     # import datasets (representation will depend on final classifier)
     print('importing datasets')
     
-    dataset = General_Dataset(os.path.join('datasets', 'en', args.dataset), None,
+    dataset = General_Dataset(os.path.join('datasets', args.sl, args.dataset), None,
                                   binary=args.bi, rep=words, one_hot=False)
     
-    cross_dataset = General_Dataset(os.path.join('datasets', args.l, args.dataset), None,
+    cross_dataset = General_Dataset(os.path.join('datasets', args.tl, args.dataset), None,
                                   binary=args.bi, rep=words, one_hot=False)
 
     # Import monolingual vectors
@@ -358,8 +321,8 @@ if __name__ == '__main__':
     trg_vecs = WordVecs(args.trg_vecs)
 
     # Get sentiment synonyms and antonyms to check how they move during training
-    synonyms1, synonyms2, neg = get_syn_ant('en', src_vecs)
-    cross_syn1, cross_syn2, cross_neg = get_syn_ant(args.l, trg_vecs)
+    synonyms1, synonyms2, neg = get_syn_ant(args.sl, src_vecs)
+    cross_syn1, cross_syn2, cross_neg = get_syn_ant(args.tl, trg_vecs)
 
     # Import translation pairs
     pdataset = ProjectionDataset(args.trans, src_vecs, trg_vecs)
@@ -395,7 +358,11 @@ if __name__ == '__main__':
     blse.evaluate(cross_dataset._Xtest, cross_dataset._ytest, src=False)
 
     blse.evaluate(cross_dataset._Xtest, cross_dataset._ytest, src=False,
-                  outfile=os.path.join('predictions', args.l, 'ble',
+                  outfile=os.path.join('predictions', args.tl, 'blse',
                                        '{0}-{1}-alpha{2}-epoch{3}-batch{4}.txt'.format(
                                        args.dataset, b, args.alpha,
                                        best_params[0], args.batch_size)))
+
+
+if __name__ == '__main__':
+    main()

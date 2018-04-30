@@ -98,6 +98,27 @@ def get_syn_ant(lang, vecs):
     idx = min(len(synonyms1), len(synonyms2), len(neg))
     return synonyms1[:idx], synonyms2[:idx], neg[:idx]
 
+def get_best_run(weightdir):
+    """
+    This returns the best dev f1, parameters, and weights from the models
+    found in the weightdir.
+    """
+    best_params = []
+    best_f1 = 0.0
+    best_weights = ''
+    for file in os.listdir(weightdir):
+        epochs = int(re.findall('[0-9]+', file.split('-')[-4])[0])
+        batch_size = int(re.findall('[0-9]+', file.split('-')[-3])[0])
+        alpha = float(re.findall('0.[0-9]+', file.split('-')[-2])[0])
+        f1 = float(re.findall('0.[0-9]+', file.split('-')[-1])[0])
+        if f1 > best_f1:
+            best_params = [epochs, batch_size, alpha]
+            best_f1 = f1
+            weights = os.path.join(weightdir, file)
+            best_weights = weights
+    return best_f1, best_params, best_weights
+
+
 
 def print_prediction(model, cross_dataset, outfile):
     prediction = model.predict(cross_dataset._Xtest)
