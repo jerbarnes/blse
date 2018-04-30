@@ -20,6 +20,7 @@ class BLSE(nn.Module):
                  cdataset, trg_dataset,
                  src_syn1, src_syn2, src_neg,
                  trg_syn1, trg_syn2, trg_neg,
+                 projection_loss='mse',
                  output_dim=5):
         super(BLSE, self).__init__()
         
@@ -39,9 +40,12 @@ class BLSE(nn.Module):
         self.clf = nn.Linear(src_vecs.vector_size, output_dim)
         # Loss Functions
         self.criterion = nn.CrossEntropyLoss()
-        self.proj_criterion = nn.CosineSimilarity()
+        if projection_loss == 'mse':
+            self.proj_criterion = mse_loss
+        elif projection_loss == 'cosine':
+            self.proj_criterion = cosine_loss
         # Optimizer
-        self.optim = torch.optim.Adam(self.parameters() )
+        self.optim = torch.optim.Adam(self.parameters())
         # Datasets
         self.pdataset = pdataset
         self.cdataset = cdataset
@@ -99,7 +103,7 @@ class BLSE(nn.Module):
         x_proj, y_proj = self.project(x, y)
 
         # distance-based loss (cosine, mse)
-        loss = mse_loss(x_proj, y_proj)
+        loss = self.proj_criterion(x_proj, y_proj)
 
         return loss
 
@@ -108,7 +112,7 @@ class BLSE(nn.Module):
         for w in sentence:
             try:
                 sent.append(model[w])
-            except IndexError:
+            except KeyError:
                 sent.append(0)
         return torch.LongTensor(np.array(sent))
 
@@ -188,7 +192,7 @@ class BLSE(nn.Module):
                 ydev = self.cdataset._ydev
                 xp = self.predict(xdev).data.numpy().argmax(1)
                 # macro f1
-                dev_f1 = per_class_f1(ydev, xp).mean()
+                dev_f1 = macro_f1(ydev, xp)
                 
 
                 # check target dev f1
@@ -196,7 +200,7 @@ class BLSE(nn.Module):
                 crossy = self.trg_dataset._ydev
                 xp = self.predict(crossx, src=False).data.numpy().argmax(1)
                 # macro f1
-                cross_f1 = per_class_f1(crossy, xp).mean()
+                cross_f1 = macro_f1(crossy, xp)
            
 
                 if cross_f1 > best_cross_f1:
@@ -268,8 +272,8 @@ class BLSE(nn.Module):
         pred = self.predict(X, src=src).data.numpy().argmax(1)
         acc = accuracy_score(Y, pred)
         prec = per_class_prec(Y, pred).mean()
-        rec = per_class_f1(Y, pred).mean()
-        f1 = per_class_f1(Y, pred).mean()
+        rec = macro_f1(Y, pred)
+        f1 = macro_f1(Y, pred)
         if outfile:
             with open(outfile, 'w') as out:
                 for i in pred:
@@ -281,7 +285,11 @@ class BLSE(nn.Module):
 
 def mse_loss(x,y):
     # mean squared error loss
-    return torch.sum((x - y )**2) / x.data.nelement()
+    return torch.sum((x - y )**2) / x.data.shape[0]
+
+def cosine_loss(x,y):
+    c = nn.CosineSimilarity()
+    return (1 - c(x,y)).mean()
 
 def cos(x, y):
     """
@@ -295,13 +303,14 @@ def main():
     parser.add_argument('-sl', '--source_lang', help="source language: es, ca, eu, en (default: en)", default='en')
     parser.add_argument('-tl', '--target_lang', help="target language: es, ca, eu, en (default: es)", default='es')
     parser.add_argument('-bi', '--binary', help="binary or 4-class (default: True)", default=True, type=str2bool)
-    parser.add_argument('-e', '--epochs', default=80, type=int, help="training epochs (default: 80)")
-    parser.add_argument('-a', '--alpha', default=.5, type=float, help="trade-off between projection and classification objectives (default: .5)")
-    parser.add_argument('-bs', '--batch_size', default=200, type=int, help="classification batch size (default: 200)")
+    parser.add_argument('-e', '--epochs', default=200, type=int, help="training epochs (default: 200)")
+    parser.add_argument('-a', '--alpha', default=.001, type=float, help="trade-off between projection and classification objectives (default: .001)")
+    parser.add_argument('-pl', '--proj_loss', default='mse',  help="projection loss: mse, cosine (default: cosine)")
+    parser.add_argument('-bs', '--batch_size', default=20, type=int, help="classification batch size (default: 50)")
     parser.add_argument('-sv', '--src_vecs', default='/home/jeremy/NS/Keep/Temp/Exps/EMBEDDINGS/BLSE/google.txt', help=" source language vectors (default: GoogleNewsVecs )")
     parser.add_argument('-tv', '--trg_vecs', default='/home/jeremy/NS/Keep/Temp/Exps/EMBEDDINGS/BLSE/sg-300-es.txt', help=" target language vectors (default: SGNS on Wikipedia)")
     parser.add_argument('-tr', '--trans', help='translation pairs (default: Bing Liu Sentiment Lexicon Translations)', default='lexicons/bingliu_en_es.one-2-one_AND_Negators_Intensifiers_Diminishers.txt')
-    parser.add_argument('-da', '--dataset', default='opener', help="dataset to train and test on (default: opener)")
+    parser.add_argument('-da', '--dataset', default='opener_sents', help="dataset to train and test on (default: opener_sents)")
     parser.add_argument('-sd', '--savedir', default='models', help="where to dump weights during training (default: ./models)")
     args = parser.parse_args()
 
@@ -338,6 +347,7 @@ def main():
     blse = BLSE(src_vecs, trg_vecs, pdataset, dataset, cross_dataset,
                 synonyms1, synonyms2, neg,
                 cross_syn1, cross_syn2, cross_neg,
+                projection_loss=args.proj_loss,
                 output_dim=output_dim)
 
     # Fit model
@@ -362,6 +372,10 @@ def main():
                                        '{0}-{1}-alpha{2}-epoch{3}-batch{4}.txt'.format(
                                        args.dataset, b, args.alpha,
                                        best_params[0], args.batch_size)))
+
+    blse.confusion_matrix(cross_dataset._Xtest, cross_dataset._ytest, src=False)
+
+    blse.plot()
 
 
 if __name__ == '__main__':
