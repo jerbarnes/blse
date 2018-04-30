@@ -5,7 +5,6 @@ import numpy as np
 from sklearn.svm import LinearSVC
 from Utils.Datasets import *
 from Utils.WordVecs import *
-from Utils.MyMetrics import *
 from Utils.utils import *
 
 def get_W(pdataset, src_vecs, trg_vecs):
@@ -25,11 +24,10 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-src_vecs', default='embeddings/original/google.txt', help=" source language vectors (default: GoogleNewsVecs )")
-    parser.add_argument('-trg_vecs', default='embeddings/original/sg-300-es.txt', help=" target language vectors (default: SGNS on Wikipedia)")
-    parser.add_argument('-trans', help='translation pairs (default: Bing Liu Sentiment Lexicon Translations)', default='lexicons/bingliu_en_es.one-2-one_AND_Negators_Intensifiers_Diminishers.txt')
-    parser.add_argument('-dataset', default='opener', help="dataset to train and test on (default: opener)")
-    parser.add_argument('-bi', help='List of booleans. True is only binary, False is only 4 class. True False is both. (default: [True, False])',
-                        default = [True, False], nargs='+', type=str2bool)
+    parser.add_argument('-trg_vecs', default='embeddings/original/sg-300-{0}.txt', help=" target language vectors (default: SGNS on Wikipedia)")
+    parser.add_argument('-trans', help='translation pairs (default: Bing Liu Sentiment Lexicon Translations)', default='lexicons/bingliu/en-{0}.txt')
+    parser.add_argument('-dataset', default='opener_sents', help="dataset to train and test on (default: opener)")
+    parser.add_argument('-bi', help='List of booleans. True is only binary, False is only 4 class. True False is both. (default: [True, False])', default=[True, False], nargs='+', type=str2bool)
     args = parser.parse_args()
     
     # Loop over the three languages
@@ -38,15 +36,16 @@ def main():
         
         # Import monolingual vectors
         print('importing word embeddings')
-        src_vecs = WordVecs('embeddings/original/google.txt')
+        src_vecs = WordVecs(args.src_vecs)
         src_vecs.mean_center()
         src_vecs.normalize()
-        trg_vecs = WordVecs('embeddings/original/sg-300-{0}.txt'.format(lang))
+
+        trg_vecs = WordVecs(args.trg_vecs.format(lang))
         trg_vecs.mean_center()
         trg_vecs.normalize()
 
         # Setup projection dataset
-        pdataset = ProjectionDataset(args.trans, src_vecs, trg_vecs)
+        pdataset = ProjectionDataset(args.trans.format(lang), src_vecs, trg_vecs)
 
         # learn the translation matrix W
         W = get_W(pdataset, src_vecs, trg_vecs)

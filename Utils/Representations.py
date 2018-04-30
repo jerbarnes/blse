@@ -9,7 +9,7 @@ def ave_vecs(sentence, model):
             sent += model[w]
         except:
             # TODO: implement a much better backoff strategy (Edit distance)
-            sent += np.random.uniform((-.25, .25, model.vector_size))
+            sent += np.random.uniform(-.25, .25, model.vector_size)
     return sent / sent_length
 
 
