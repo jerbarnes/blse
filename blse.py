@@ -292,28 +292,28 @@ def cos(x, y):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-tl', help="source language: es, ca, eu, en (default: en)", default='en')
-    parser.add_argument('-tl', help="target language: es, ca, eu, en (default: es)", default='es')
-    parser.add_argument('-bi', help="binary or 4-class (default: True)", default=True, type=str2bool)
-    parser.add_argument('-epochs', default=80, type=int, help="training epochs (default: 80)")
-    parser.add_argument('-alpha', default=.5, type=float, help="trade-off between projection and classification objectives (default: .5)")
-    parser.add_argument('-batch_size', default=200, type=int, help="classification batch size (default: 200)")
-    parser.add_argument('-src_vecs', default='/home/jeremy/NS/Keep/Temp/Exps/EMBEDDINGS/BLSE/google.txt', help=" source language vectors (default: GoogleNewsVecs )")
-    parser.add_argument('-trg_vecs', default='/home/jeremy/NS/Keep/Temp/Exps/EMBEDDINGS/BLSE/sg-300-es.txt', help=" target language vectors (default: SGNS on Wikipedia)")
-    parser.add_argument('-trans', help='translation pairs (default: Bing Liu Sentiment Lexicon Translations)', default='lexicons/bingliu_en_es.one-2-one_AND_Negators_Intensifiers_Diminishers.txt')
-    parser.add_argument('-dataset', default='opener', help="dataset to train and test on (default: opener)")
-    parser.add_argument('-savedir', default='models', help="where to dump weights during training (default: ./models)")
+    parser.add_argument('-sl', '--source_lang', help="source language: es, ca, eu, en (default: en)", default='en')
+    parser.add_argument('-tl', '--target_lang', help="target language: es, ca, eu, en (default: es)", default='es')
+    parser.add_argument('-bi', '--binary', help="binary or 4-class (default: True)", default=True, type=str2bool)
+    parser.add_argument('-e', '--epochs', default=80, type=int, help="training epochs (default: 80)")
+    parser.add_argument('-a', '--alpha', default=.5, type=float, help="trade-off between projection and classification objectives (default: .5)")
+    parser.add_argument('-bs', '--batch_size', default=200, type=int, help="classification batch size (default: 200)")
+    parser.add_argument('-sv', '--src_vecs', default='/home/jeremy/NS/Keep/Temp/Exps/EMBEDDINGS/BLSE/google.txt', help=" source language vectors (default: GoogleNewsVecs )")
+    parser.add_argument('-tv', '--trg_vecs', default='/home/jeremy/NS/Keep/Temp/Exps/EMBEDDINGS/BLSE/sg-300-es.txt', help=" target language vectors (default: SGNS on Wikipedia)")
+    parser.add_argument('-tr', '--trans', help='translation pairs (default: Bing Liu Sentiment Lexicon Translations)', default='lexicons/bingliu_en_es.one-2-one_AND_Negators_Intensifiers_Diminishers.txt')
+    parser.add_argument('-da', '--dataset', default='opener', help="dataset to train and test on (default: opener)")
+    parser.add_argument('-sd', '--savedir', default='models', help="where to dump weights during training (default: ./models)")
     args = parser.parse_args()
 
 
     # import datasets (representation will depend on final classifier)
     print('importing datasets')
     
-    dataset = General_Dataset(os.path.join('datasets', args.sl, args.dataset), None,
-                                  binary=args.bi, rep=words, one_hot=False)
+    dataset = General_Dataset(os.path.join('datasets', args.source_lang, args.dataset), None,
+                                  binary=args.binary, rep=words, one_hot=False)
     
-    cross_dataset = General_Dataset(os.path.join('datasets', args.tl, args.dataset), None,
-                                  binary=args.bi, rep=words, one_hot=False)
+    cross_dataset = General_Dataset(os.path.join('datasets', args.target_lang, args.dataset), None,
+                                  binary=args.binary, rep=words, one_hot=False)
 
     # Import monolingual vectors
     print('importing word embeddings')
@@ -321,13 +321,13 @@ def main():
     trg_vecs = WordVecs(args.trg_vecs)
 
     # Get sentiment synonyms and antonyms to check how they move during training
-    synonyms1, synonyms2, neg = get_syn_ant(args.sl, src_vecs)
-    cross_syn1, cross_syn2, cross_neg = get_syn_ant(args.tl, trg_vecs)
+    synonyms1, synonyms2, neg = get_syn_ant(args.source_lang, src_vecs)
+    cross_syn1, cross_syn2, cross_neg = get_syn_ant(args.target_lang, trg_vecs)
 
     # Import translation pairs
     pdataset = ProjectionDataset(args.trans, src_vecs, trg_vecs)
 
-    if args.bi:
+    if args.binary:
         output_dim = 2
         b = 'bi'
     else:
@@ -358,7 +358,7 @@ def main():
     blse.evaluate(cross_dataset._Xtest, cross_dataset._ytest, src=False)
 
     blse.evaluate(cross_dataset._Xtest, cross_dataset._ytest, src=False,
-                  outfile=os.path.join('predictions', args.tl, 'blse',
+                  outfile=os.path.join('predictions', args.target_lang, 'blse',
                                        '{0}-{1}-alpha{2}-epoch{3}-batch{4}.txt'.format(
                                        args.dataset, b, args.alpha,
                                        best_params[0], args.batch_size)))

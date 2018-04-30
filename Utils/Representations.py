@@ -42,7 +42,7 @@ def words(sentence, model):
     return sentence.split()
 
 
-def getMyData(fname, label, model, representation=sum_vecs, encoding='utf8'):
+def getMyData(fname, label, model, representation=ave_vecs, encoding='utf8'):
     data = []
     for sent in open(fname):
         data.append((representation(sent, model), label))
