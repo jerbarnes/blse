@@ -1,11 +1,9 @@
 Bilingual Sentiment Embeddings: Joint Projection of Sentiment Across Languages
 ==============
 
-This is the finalized version of the corpora described in the following paper:
+This is the source code from the ACL paper:
 
 Jeremy Barnes, Roman Klinger, and Sabine Schulde im Walde. 2018. **Bilingual Sentiment Embeddings: Joint Projection of Sentiment Across Languages**. In *Proceedings of ACL 2018 (to appear)*.
-
-The repository contains the scripts to reproduce the results from the above paper. 
 
 
 If you use the code for academic research, please cite the paper in question:
@@ -29,22 +27,31 @@ Requirements to run the experiments
 - Python 3
 - NumPy
 - sklearn [http://scikit-learn.org/stable/]
-- pytorch [http://http://pytorch.org/]
+- pytorch [http://pytorch.org/]
 
 
 
 Usage
 --------
 
-First, get the monolingual embeddings, either by training your own,
-or by downloading the pretrained embeddings mentioned in the paper:
+First, clone the repo:
+
+```
+git clone https://github.com/jbarnesspain/blse
+cd blse
+```
+
+
+Then, get monolingual embeddings, either by training your own,
+or by downloading the pretrained embeddings mentioned in the paper,
+and put them in the 'embeddings' directory:
 
 ```
 curl 
 ```
 
 
-Then, clone the repo and run the blse script:
+Finally, run the blse script:
 
 ```
 git clone https://github.com/jbarnesspain/blse

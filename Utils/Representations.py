@@ -7,36 +7,11 @@ def ave_vecs(sentence, model):
     for w in sentence.split():
         try:
             sent += model[w]
-        except:
+        except KeyError:
             # TODO: implement a much better backoff strategy (Edit distance)
             sent += np.random.uniform(-.25, .25, model.vector_size)
     return sent / sent_length
 
-
-def idx_vecs(sentence, model):
-    """Returns a list of vectors of the tokens
-    in the sentence if they are in the model."""
-    sent = []
-    for w in sentence.split():
-        try:
-            sent.append(model[w])
-        except:
-            # TODO: implement a much better backoff strategy (Edit distance)
-            sent.append(model['of'])
-    return sent
-
-
-def bow(sentence, w2idx):
-    """
-    Bag of words representation
-    """
-    array = np.zeros(len(w2idx))
-    for w in sentence:
-        try:
-            array[w2idx[w]] += 1
-        except KeyError:
-            pass
-    return array
 
 def words(sentence, model):
     return sentence.split()
