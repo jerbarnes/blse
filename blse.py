@@ -280,6 +280,7 @@ class BLSE(nn.Module):
                 loss.backward()
                 self.optim.step()
                 
+                
                 # check cosine distance between dev translation pairs
                 xdev = self.pdataset._Xdev
                 ydev = self.pdataset._ydev
@@ -303,43 +304,43 @@ class BLSE(nn.Module):
                 n1 = self.project_one(self.src_neg)
                 ant_cos = cos(p3, n1)
                 
-                if self.trg_data:
-                    # check target dev f1
-                    crossx = self.trg_dataset._Xdev
-                    crossy = self.trg_dataset._ydev
-                    xp = self.predict(crossx, src=False).data.numpy().argmax(1)
-                    # macro f1
-                    cross_f1 = macro_f1(crossy, xp)
-               
+            if self.trg_data:
+                # check target dev f1
+                crossx = self.trg_dataset._Xdev
+                crossy = self.trg_dataset._ydev
+                xp = self.predict(crossx, src=False).data.numpy().argmax(1)
+                # macro f1
+                cross_f1 = macro_f1(crossy, xp)
+           
 
-                    if cross_f1 > best_cross_f1:
-                        best_cross_f1 = cross_f1
-                        weight_file = os.path.join(weight_dir, '{0}epochs-{1}batchsize-{2}alpha-{3:.3f}crossf1'.format(num_epochs, batch_size, alpha, best_cross_f1))
-                        self.dump_weights(weight_file)
+                if cross_f1 > best_cross_f1:
+                    best_cross_f1 = cross_f1
+                    weight_file = os.path.join(weight_dir, '{0}epochs-{1}batchsize-{2}alpha-{3:.3f}crossf1'.format(num_epochs, batch_size, alpha, best_cross_f1))
+                    self.dump_weights(weight_file)
 
-                    # check cosine distance between target sentiment synonyms
-                    cp1 = self.project_one(self.trg_syn1, src=False)
-                    cp2 = self.project_one(self.trg_syn2, src=False)
-                    cross_syn_cos = cos(cp1, cp2)
+                # check cosine distance between target sentiment synonyms
+                cp1 = self.project_one(self.trg_syn1, src=False)
+                cp2 = self.project_one(self.trg_syn2, src=False)
+                cross_syn_cos = cos(cp1, cp2)
 
-                    # check cosine distance between target sentiment antonyms
-                    cp3 = self.project_one(self.trg_syn1, src=False)
-                    cn1 = self.project_one(self.trg_neg, src=False)
-                    cross_ant_cos = cos(cp3, cn1)
-                    
-                    sys.stdout.write('\r epoch {0} loss: {1:.3f}  trans: {2:.3f}  src_f1: {3:.3f}  trg_f1: {4:.3f}  src_syn: {5:.3f}  src_ant: {6:.3f}  cross_syn: {7:.3f}  cross_ant: {8:.3f}'.format(
-                        i, loss.data[0], score.data[0], dev_f1,
-                        cross_f1, syn_cos.data[0], ant_cos.data[0],
-                        cross_syn_cos.data[0], cross_ant_cos.data[0]))
-                    sys.stdout.flush()
-                    self.history['loss'].append(loss.data[0])
-                    self.history['dev_cosine'].append(score.data[0])
-                    self.history['dev_f1'].append(dev_f1)
-                    self.history['cross_f1'].append(cross_f1)
-                    self.history['syn_cos'].append(syn_cos.data[0])
-                    self.history['ant_cos'].append(ant_cos.data[0])
-                    self.history['cross_syn'].append(cross_syn_cos.data[0])
-                    self.history['cross_ant'].append(cross_ant_cos.data[0])
+                # check cosine distance between target sentiment antonyms
+                cp3 = self.project_one(self.trg_syn1, src=False)
+                cn1 = self.project_one(self.trg_neg, src=False)
+                cross_ant_cos = cos(cp3, cn1)
+                
+                sys.stdout.write('\r epoch {0} loss: {1:.3f}  trans: {2:.3f}  src_f1: {3:.3f}  trg_f1: {4:.3f}  src_syn: {5:.3f}  src_ant: {6:.3f}  cross_syn: {7:.3f}  cross_ant: {8:.3f}'.format(
+                    i, loss.data[0], score.data[0], dev_f1,
+                    cross_f1, syn_cos.data[0], ant_cos.data[0],
+                    cross_syn_cos.data[0], cross_ant_cos.data[0]))
+                sys.stdout.flush()
+                self.history['loss'].append(loss.data[0])
+                self.history['dev_cosine'].append(score.data[0])
+                self.history['dev_f1'].append(dev_f1)
+                self.history['cross_f1'].append(cross_f1)
+                self.history['syn_cos'].append(syn_cos.data[0])
+                self.history['ant_cos'].append(ant_cos.data[0])
+                self.history['cross_syn'].append(cross_syn_cos.data[0])
+                self.history['cross_ant'].append(cross_ant_cos.data[0])
 
     def plot(self, title=None, outfile=None):
         """
@@ -498,6 +499,9 @@ def main():
                 src_syn1=synonyms1, src_syn2=synonyms2, src_neg=neg,
                 trg_syn1=cross_syn1, trg_syn2=cross_syn2, trg_neg=cross_neg,
                 )
+
+    # If there's no savedir, create it
+    os.makedirs(args.savedir, exist_ok=True)
 
     # Fit model
     blse.fit(pdataset._Xtrain, pdataset._ytrain,
