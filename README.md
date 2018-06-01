@@ -43,21 +43,21 @@ cd blse
 
 
 Then, get monolingual embeddings, either by training your own,
-or by downloading the pretrained embeddings mentioned in the paper,
+or by downloading the [pretrained embeddings](https://drive.google.com/open?id=1GpyF2h0j8K5TKT7y7Aj0OyPgpFc8pMNS) mentioned in the paper,
 and put them in the 'embeddings' directory:
 
-```
-curl 
-```
 
-
-Finally, run the blse script:
+Run the blse parameter search script, in order to get the best hyperparameters:
 
 ```
-git clone https://github.com/jbarnesspain/blse
-cd blse
+python3 parmeter_search.py
+```
+
+Finally, you can use the blse.py script which will automatically use the best hyperparameters found.
+
+```
 python3 blse.py
-```
+``` 
 
 
 License
