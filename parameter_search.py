@@ -127,8 +127,8 @@ if __name__ == '__main__':
                                      outfile=os.path.join('predictions', lang, 'blse', 'opener_sents-bi-alpha{0}-epoch{1}-batch{2}.txt'.format(alpha, epochs, batch_size)))
                     else:
                         # ble.plot(outfile=os.path.join('figures', 'syn-ant', lang, 'ble', '{0}-4cls-alpha{1}-epoch{2}-batch{3}.pdf'.format(args.dataset, alpha, epochs, batch_size)))
-                        blse.evaluate(cross_dataset._Xtest, cross_dataset._ytest, average='macro', src=False)
-                        blse.evaluate(cross_dataset._Xtest, cross_dataset._ytest, average='macro', src=False,
+                        blse.evaluate(cross_dataset._Xtest, cross_dataset._ytest, src=False)
+                        blse.evaluate(cross_dataset._Xtest, cross_dataset._ytest, src=False,
                                      outfile=os.path.join('predictions', lang, 'blse', 'opener_sents-4cls-alpha{0}-epoch{1}-batch{2}.txt'.format(alpha, epochs, batch_size)))
 
 

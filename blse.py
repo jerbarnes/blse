@@ -387,7 +387,7 @@ class BLSE(nn.Module):
         pred = self.predict(X, src=src).data.numpy().argmax(1)
         acc = accuracy_score(Y, pred)
         prec = per_class_prec(Y, pred).mean()
-        rec = macro_f1(Y, pred)
+        rec = per_class_prec(Y, pred).mean()
         f1 = macro_f1(Y, pred)
         if outfile:
             with open(outfile, 'w') as out:
