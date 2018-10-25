@@ -47,7 +47,7 @@ cd blse
 
 Then, get monolingual embeddings, either by training your own,
 or by downloading the [pretrained embeddings](https://drive.google.com/open?id=1GpyF2h0j8K5TKT7y7Aj0OyPgpFc8pMNS) mentioned in the paper,
-and put them in the 'embeddings' directory:
+unzipping them and putting them in the 'embeddings' directory:
 
 
 Run the blse parameter search script, in order to get the best hyperparameters:
@@ -65,8 +65,8 @@ python3 blse.py
 Update
 -------
 
-I have added further experiments comparing our method with [MUSE](https://github.com/facebookresearch/MUSE). The results
-with MUSE are similar to those with VecMap.
+I have added further experiments comparing our method with [MUSE](https://github.com/facebookresearch/MUSE). MUSE outperforms
+VecMap ([version](https://aclweb.org/anthology/P17-1042) from 2017) on all setups and Barista on the binary setup. BLSE performs better than MUSE on 5 of the 6 setups.
 
 
 License
