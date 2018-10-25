@@ -20,7 +20,7 @@ def str2bool(v):
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-vec_dir', default='../deployment/MUSE/dumped', help=" directory that hold MUSE vectors")
+    parser.add_argument('-vec_dir', default='../deployment/MUSE/', help=" directory that hold MUSE vectors")
     parser.add_argument('-dataset', default='opener', help="dataset to train and test on (default: opener)")
     parser.add_argument('-bi', help='List of booleans. True is only binary, False is only 4 class. True False is both. (default: [True, False])',
                         default = [True, False], nargs='+', type=str2bool)

@@ -3,22 +3,25 @@ Bilingual Sentiment Embeddings: Joint Projection of Sentiment Across Languages
 
 This is the source code from the ACL paper:
 
-Jeremy Barnes, Roman Klinger, and Sabine Schulde im Walde. 2018. **Bilingual Sentiment Embeddings: Joint Projection of Sentiment Across Languages**. In *Proceedings of ACL 2018 (to appear)*.
+Jeremy Barnes, Roman Klinger, and Sabine Schulde im Walde. 2018. **Bilingual Sentiment Embeddings: Joint Projection of Sentiment Across Languages**. In *Proceedings of ACL 2018*.
 
 
 If you use the code for academic research, please cite the paper in question:
 ```
 @inproceedings{Barnes2018blse,
-    author={Barnes, Jeremy and Klinger, Roman and Schulte im Walde, Sabine},
-    title={Bilingual Sentiment Embeddings: Joint Projection of Sentiment Across Languages},
-    booktitle = {Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
-    year = {2018},
-    month = {July},
-    date = {15-20},
-    address = {Melbourne, Australia},
-    publisher = {Association for Computational Linguistics},
-    language = {english}
-    }
+  author = 	"Barnes, Jeremy
+		and Klinger, Roman
+		and Schulte im Walde, Sabine",
+  title = 	"Bilingual Sentiment Embeddings: Joint Projection of Sentiment Across Languages",
+  booktitle = 	"Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
+  year = 	"2018",
+  publisher = 	"Association for Computational Linguistics",
+  pages = 	"2483--2493",
+  location = 	"Melbourne, Australia",
+  url = 	"http://aclweb.org/anthology/P18-1231"
+}
+
+
 ```
 
 
@@ -58,6 +61,12 @@ Finally, you can use the blse.py script which will automatically use the best hy
 ```
 python3 blse.py
 ``` 
+
+Update
+-------
+
+I have added further experiments comparing our method with [MUSE](https://github.com/facebookresearch/MUSE). The results
+with MUSE are similar to those with VecMap.
 
 
 License
