@@ -3,7 +3,7 @@ Bilingual Sentiment Embeddings: Joint Projection of Sentiment Across Languages
 
 This is the source code from the ACL paper:
 
-Jeremy Barnes, Roman Klinger, and Sabine Schulde im Walde. 2018. **Bilingual Sentiment Embeddings: Joint Projection of Sentiment Across Languages**. In *Proceedings of ACL 2018*.
+Jeremy Barnes, Roman Klinger, and Sabine Schulde im Walde. 2018. [**Bilingual Sentiment Embeddings: Joint Projection of Sentiment Across Languages**](http://aclweb.org/anthology/P18-1231). In *Proceedings of ACL 2018*.
 
 
 If you use the code for academic research, please cite the paper in question:
