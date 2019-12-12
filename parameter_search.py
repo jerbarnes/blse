@@ -9,33 +9,33 @@ def main():
 if __name__ == '__main__':
     main()
     """
-    Search for the best hyperparameters for the blse model. 
+    Search for the best hyperparameters for the blse model.
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', '--langs', 
-                        help="target language: es, ca, eu", 
+    parser.add_argument('-l', '--langs',
+                        help="target language: es, ca, eu",
                         nargs='+', default=['es','ca','eu'])
-    parser.add_argument('-e', '--epochs', type=int, 
+    parser.add_argument('-e', '--epochs', type=int,
                         default=200)
     parser.add_argument('-a', '--alphas',
-                        help="list of alphas for hyperparameter search (default: [0.1 - 0.9])",
+                        help="list of alphas for hyperparameter search (default: [0.00001 - 0.3])",
                         nargs='+',
                         type=float,
-                        default=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
-    parser.add_argument('-bs', '--batch_sizes', 
+                        default=[0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.1, 0.2, 0.3])
+    parser.add_argument('-bs', '--batch_sizes',
                         help="batch sizes for hyperparameter search (default: [20, 50, 80, 100, 200]",
-                        nargs='+', 
-                        type=int, 
+                        nargs='+',
+                        type=int,
                         default=[20, 50, 80, 100, 200])
-    parser.add_argument('-src_vecs', 
+    parser.add_argument('-src_vecs',
                         help="source embedding file (default: embeddings/original/google.txt)",
                         default='embeddings/original/google.txt')
-    parser.add_argument('-trg_vecs_dir', 
-                        help='directory of target language vectors. Vectors should be named sg-300-LANG-.txt, where LANG is the two letter language identifier, i.e. ES for Spanish', 
-                        default='embeddings/original/sg-300-es.txt')
-    parser.add_argument('-lexicon_dir', 
-                        help='translation lexicon directory (default: lexicons/bingliu)', 
+    parser.add_argument('-trg_vecs_dir',
+                        help='directory of target language vectors. Vectors should be named sg-300-LANG-.txt, where LANG is the two letter language identifier, i.e. ES for Spanish',
+                        default='embeddings/original')
+    parser.add_argument('-lexicon_dir',
+                        help='translation lexicon directory (default: lexicons/bingliu)',
                         default='lexicons/bingliu')
 
     args = parser.parse_args()
@@ -49,13 +49,13 @@ if __name__ == '__main__':
         trg_vecs = WordVecs(trg_vec_file)
 
         for bi in [True, False]:
-            
+
             # import datasets (representation will depend on final classifier)
             print('importing datasets')
-    
+
             dataset = General_Dataset(os.path.join('datasets', 'en', 'opener_sents'), None,
                                   binary=bi, rep=words, one_hot=False)
-    
+
             cross_dataset = General_Dataset(os.path.join('datasets', lang, 'opener_sents'), None,
                                   binary=bi, rep=words, one_hot=False)
 
@@ -118,7 +118,7 @@ if __name__ == '__main__':
                     best_f1, best_params, best_weights = get_best_run(weight_dir)
                     epochs, batch_size, alpha = best_params
                     blse.load_weights(best_weights)
-                    
+
                     # evaluate
                     if bi:
                         # ble.plot(outfile=os.path.join('figures', 'syn-ant', lang, 'ble', '{0}-bi-alpha{1}-epoch{2}-batch{3}.pdf'.format(args.dataset, alpha, epochs, batch_size)))
