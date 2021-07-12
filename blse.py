@@ -53,7 +53,7 @@ class BLSE(nn.Module):
 
 
     """
-    
+
     def __init__(self, src_vecs, trg_vecs, pdataset,
                  cdataset, trg_dataset,
                  projection_loss='mse',
@@ -62,7 +62,7 @@ class BLSE(nn.Module):
                  trg_syn1=None, trg_syn2=None, trg_neg=None,
                  ):
         super(BLSE, self).__init__()
-        
+
         # Embedding matrices
         self.semb = nn.Embedding(src_vecs.vocab_length, src_vecs.vector_size)
         self.semb.weight.data.copy_(torch.from_numpy(src_vecs._matrix))
@@ -72,7 +72,7 @@ class BLSE(nn.Module):
         self.temb.weight.data.copy_(torch.from_numpy(trg_vecs._matrix))
         self.tw2idx = trg_vecs._w2idx
         self.tidx2w = trg_vecs._idx2w
-        
+
         # Projection vectors
         self.m = nn.Linear(src_vecs.vector_size,
                            src_vecs.vector_size,
@@ -80,20 +80,20 @@ class BLSE(nn.Module):
         self.mp = nn.Linear(trg_vecs.vector_size,
                             trg_vecs.vector_size,
                             bias=False)
-        
+
         # Classifier
         self.clf = nn.Linear(src_vecs.vector_size, output_dim)
-        
+
         # Loss Functions
         self.criterion = nn.CrossEntropyLoss()
         if projection_loss == 'mse':
             self.proj_criterion = mse_loss
         elif projection_loss == 'cosine':
             self.proj_criterion = cosine_loss
-            
+
         # Optimizer
         self.optim = torch.optim.Adam(self.parameters())
-        
+
         # Datasets
         self.pdataset = pdataset
         self.cdataset = cdataset
@@ -113,7 +113,7 @@ class BLSE(nn.Module):
             self.trg_data = True
         else:
             self.trg_data = False
-        
+
         # History
         self.history  = {'loss':[], 'dev_cosine':[], 'dev_f1':[], 'cross_f1':[],
                          'syn_cos':[], 'ant_cos':[], 'cross_syn':[], 'cross_ant':[]}
@@ -137,7 +137,7 @@ class BLSE(nn.Module):
         w2 = self.mp.weight.data.copy_(torch.from_numpy(f['arr_1']))
         w3 = self.clf.weight.data.copy_(torch.from_numpy(f['arr_2']))
         b = self.clf.bias.data.copy_(torch.from_numpy(f['arr_3']))
-        
+
     def project(self, X, Y):
         """
         Project X and Y into shared space.
@@ -171,7 +171,7 @@ class BLSE(nn.Module):
         Find the loss between the two projected sets of translations.
         The loss is the proj_criterion.
         """
-        
+
         x_proj, y_proj = self.project(x, y)
 
         # distance-based loss (cosine, mse)
@@ -208,12 +208,15 @@ class BLSE(nn.Module):
         the tw2idx and temb.
         """
         vecs = []
+        #import pdb; pdb.set_trace()
         if src:
-            idxs = np.array(self.lookup(X, self.sw2idx))
+            # idxs = np.array(self.lookup(X, self.sw2idx))
+            idxs = self.lookup(X, self.sw2idx)
             for i in idxs:
                 vecs.append(self.semb(Variable(i)).mean(0))
         else:
-            idxs = np.array(self.lookup(X, self.tw2idx))
+            # idxs = np.array(self.lookup(X, self.tw2idx))
+            idxs = self.lookup(X, self.tw2idx)
             for i in idxs:
                 vecs.append(self.temb(Variable(i)).mean(0))
         return torch.stack(vecs)
@@ -225,7 +228,7 @@ class BLSE(nn.Module):
         m (if src==True) or mp (if src==False)
         to predict the sentiment of X.
         """
-        
+
         X = self.ave_vecs(X, src)
         if src:
             x_proj = self.m(X)
@@ -262,15 +265,15 @@ class BLSE(nn.Module):
         Trains the model on the projection data (and
         source language sentiment data (class_X, class_Y).
         """
-        
+
         num_batches = int(len(class_X) / batch_size)
         best_cross_f1 = 0
         num_epochs = 0
-        
+
         for i in range(epochs):
             idx = 0
             num_epochs += 1
-            
+
             for j in range(num_batches):
                 cx = class_X[idx:idx+batch_size]
                 cy = class_Y[idx:idx+batch_size]
@@ -279,8 +282,8 @@ class BLSE(nn.Module):
                 loss = self.full_loss(proj_X, proj_Y, cx, cy, alpha)
                 loss.backward()
                 self.optim.step()
-                
-                
+
+
                 # check cosine distance between dev translation pairs
                 xdev = self.pdataset._Xdev
                 ydev = self.pdataset._ydev
@@ -303,7 +306,24 @@ class BLSE(nn.Module):
                 p3 = self.project_one(self.src_syn1)
                 n1 = self.project_one(self.src_neg)
                 ant_cos = cos(p3, n1)
-                
+
+            # If there's no target data
+            if not self.trg_data:
+
+                if dev_f1 > best_cross_f1:
+                    best_cross_f1 = dev_f1
+                    weight_file = os.path.join(weight_dir, '{0}epochs-{1}batchsize-{2}alpha-{3:.3f}devf1'.format(num_epochs, batch_size, alpha, best_cross_f1))
+                    self.dump_weights(weight_file)
+
+                sys.stdout.write('\r epoch {0} loss: {1:.3f}  trans: {2:.3f}  src_f1: {3:.3f}  src_syn: {4:.3f}  src_ant: {5:.3f}'.format(i, loss.data.item(), score.data.item(), dev_f1, syn_cos.data.item(), ant_cos.data.item()))
+                sys.stdout.flush()
+                self.history['loss'].append(loss.data.item())
+                self.history['dev_cosine'].append(score.data.item())
+                self.history['dev_f1'].append(dev_f1)
+                self.history['syn_cos'].append(syn_cos.data.item())
+                self.history['ant_cos'].append(ant_cos.data.item())
+
+            # If there's target data
             if self.trg_data:
                 # check target dev f1
                 crossx = self.trg_dataset._Xdev
@@ -311,7 +331,7 @@ class BLSE(nn.Module):
                 xp = self.predict(crossx, src=False).data.numpy().argmax(1)
                 # macro f1
                 cross_f1 = macro_f1(crossy, xp)
-           
+
 
                 if cross_f1 > best_cross_f1:
                     best_cross_f1 = cross_f1
@@ -327,7 +347,7 @@ class BLSE(nn.Module):
                 cp3 = self.project_one(self.trg_syn1, src=False)
                 cn1 = self.project_one(self.trg_neg, src=False)
                 cross_ant_cos = cos(cp3, cn1)
-                
+
                 sys.stdout.write('\r epoch {0} loss: {1:.3f}  trans: {2:.3f}  src_f1: {3:.3f}  trg_f1: {4:.3f}  src_syn: {5:.3f}  src_ant: {6:.3f}  cross_syn: {7:.3f}  cross_ant: {8:.3f}'.format(
                     i, loss.data[0], score.data[0], dev_f1,
                     cross_f1, syn_cos.data[0], ant_cos.data[0],
@@ -347,7 +367,7 @@ class BLSE(nn.Module):
         Plots the progression of the model. If outfile != None,
         the plot is saved to outfile.
         """
-        
+
         h = self.history
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -383,7 +403,7 @@ class BLSE(nn.Module):
         and macro F1 of the model on X. If outfile != None,
         the predictions are written to outfile.
         """
-        
+
         pred = self.predict(X, src=src).data.numpy().argmax(1)
         acc = accuracy_score(Y, pred)
         prec = per_class_prec(Y, pred).mean()
@@ -434,7 +454,7 @@ def main():
                         default=.001,
                         type=float)
     parser.add_argument('-pl', '--proj_loss',
-                        help="projection loss: mse, cosine (default: cosine)",
+                        help="projection loss: mse, cosine (default: mse)",
                         default='mse')
     parser.add_argument('-bs', '--batch_size',
                         help="classification batch size (default: 50)",
@@ -455,32 +475,26 @@ def main():
     parser.add_argument('-sd', '--savedir',
                         help="where to dump weights during training (default: ./models)",
                         default='models/blse')
+    parser.add_argument('-notarg', '--no_target_data', default=False, type=str2bool)
     args = parser.parse_args()
 
 
     # import datasets (representation will depend on final classifier)
     print('importing datasets')
-    
+
     dataset = General_Dataset(os.path.join('datasets', args.source_lang, args.dataset),
                               None,
                               binary=args.binary,
                               rep=words,
                               one_hot=False)
-    
-    cross_dataset = General_Dataset(os.path.join('datasets', args.target_lang, args.dataset),
-                                    None,
-                                    binary=args.binary,
-                                    rep=words,
-                                    one_hot=False)
 
     # Import monolingual vectors
     print('importing word embeddings')
     src_vecs = WordVecs(args.src_vecs)
     trg_vecs = WordVecs(args.trg_vecs)
 
-    # Get sentiment synonyms and antonyms to check how they move during training
+     # Get sentiment synonyms and antonyms to check how they move during training
     synonyms1, synonyms2, neg = get_syn_ant(args.source_lang, src_vecs)
-    cross_syn1, cross_syn2, cross_neg = get_syn_ant(args.target_lang, trg_vecs)
 
     # Import translation pairs
     pdataset = ProjectionDataset(args.trans, src_vecs, trg_vecs)
@@ -492,13 +506,30 @@ def main():
         output_dim = 4
         b = '4cls'
 
-    # Set up model
-    blse = BLSE(src_vecs, trg_vecs, pdataset, dataset, cross_dataset,
-                projection_loss=args.proj_loss,
-                output_dim=output_dim,
-                src_syn1=synonyms1, src_syn2=synonyms2, src_neg=neg,
-                trg_syn1=cross_syn1, trg_syn2=cross_syn2, trg_neg=cross_neg,
-                )
+    if not args.no_target_data:
+        cross_dataset = General_Dataset(os.path.join('datasets',
+                                                     args.target_lang,
+                                                     args.dataset),
+                                        None,
+                                        binary=args.binary,
+                                        rep=words,
+                                        one_hot=False)
+        cross_syn1, cross_syn2, cross_neg = get_syn_ant(args.target_lang,
+                                                        trg_vecs)
+
+        # Set up model
+        blse = BLSE(src_vecs, trg_vecs, pdataset, dataset, cross_dataset,
+                    projection_loss=args.proj_loss,
+                    output_dim=output_dim,
+                    src_syn1=synonyms1, src_syn2=synonyms2, src_neg=neg,
+                    trg_syn1=cross_syn1, trg_syn2=cross_syn2, trg_neg=cross_neg)
+
+    else:
+        # Set up model
+        blse = BLSE(src_vecs, trg_vecs, pdataset, dataset, None,
+                    projection_loss=args.proj_loss,
+                    output_dim=output_dim,
+                    src_syn1=synonyms1, src_syn2=synonyms2, src_neg=neg)
 
     # If there's no savedir, create it
     os.makedirs(args.savedir, exist_ok=True)
@@ -517,18 +548,22 @@ def main():
     print('best dev f1: {0:.3f}'.format(best_f1))
     print('parameters: epochs {0} batch size {1} alpha {2}'.format(*best_params))
 
-    # Evaluate on test set
-    blse.evaluate(cross_dataset._Xtest, cross_dataset._ytest, src=False)
 
-    blse.evaluate(cross_dataset._Xtest, cross_dataset._ytest, src=False,
-                  outfile=os.path.join('predictions', args.target_lang, 'blse',
-                                       '{0}-{1}-alpha{2}-epoch{3}-batch{4}.txt'.format(
-                                       args.dataset, b, args.alpha,
-                                       best_params[0], args.batch_size)))
+    if not args.no_target_data:
+        # Evaluate on test set
+        blse.evaluate(cross_dataset._Xtest, cross_dataset._ytest, src=False)
 
-    blse.confusion_matrix(cross_dataset._Xtest, cross_dataset._ytest, src=False)
+        blse.evaluate(cross_dataset._Xtest,
+                      cross_dataset._ytest,
+                      src=False,
+                      outfile=os.path.join('predictions',
+                                           args.target_lang,
+                                           'blse','{0}-{1}-alpha{2}-epoch{3}-batch{4}.txt'.format(args.dataset,b, args.alpha, best_params[0], args.batch_size)))
 
-    blse.plot()
+        blse.confusion_matrix(cross_dataset._Xtest,
+                              cross_dataset._ytest,
+                              src=False)
+        blse.plot()
 
 
 if __name__ == '__main__':
