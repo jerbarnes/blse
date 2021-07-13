@@ -237,6 +237,21 @@ class BLSE(nn.Module):
         out = F.softmax(self.clf(x_proj))
         return out
 
+    def predict_labels(self, X, src=True):
+        label_dict = {2: {0: "negative",
+                          1: "positive"},
+                      4: {0: "strong negative",
+                          1: "negative",
+                          2: "positive",
+                          3: "strong positive"}
+                      }
+        out = self.predict(X, src=True)
+        preds = out.argmax(dim=1)
+        output_dim = self.clf.weight.shape[0]
+        labels = [label_dict[output_dim][l] for l in preds.tolist()]
+        return labels
+
+
     def classification_loss(self, x, y, src=True):
         pred = self.predict(x, src=src)
         y = Variable(torch.from_numpy(y))
