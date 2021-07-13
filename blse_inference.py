@@ -22,9 +22,6 @@ def main():
     parser.add_argument('-tv', '--trg_vecs',
                         help=" target language vectors (default: SGNS on Wikipedia)",
                         default='sg-300-es.txt')
-    parser.add_argument('-tl', '--target_lang',
-                        help="target language: es, ca, eu, en (default: es)",
-                        default='es')
     parser.add_argument('-o', '--outfile', help="name of prediction file",
                         default="predictions.txt")
     args = parser.parse_args()
